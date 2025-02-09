@@ -22,5 +22,5 @@ Backend API for Masclet Imperi application built with FastAPI and PostgreSQL.
 
 1. Clone the repository
 ```bash
-git clone <repository-url>
-cd backend
+git clone https://github.com/pablis77/masclet-imperi-backend.git
+cd masclet-imperi-backend
