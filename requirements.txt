@@ -1,8 +1,16 @@
-fastapi==0.109.0
-uvicorn==0.27.0
+fastapi==0.109.2
+tortoise-orm==0.20.0
+aerich==0.7.2
+python-dotenv==1.0.1
+asyncpg==0.29.0
+uvicorn==0.27.1
 
-passlib==1.7.4
+passlib[bcrypt]==1.7.4
 bcrypt==4.0.1
-python-jose==3.3.0
+python-jose[cryptography]==3.3.0
 cryptography==41.0.7
 python-multipart==0.0.6
+tomlkit==0.12.3
+tomli-w==1.0.0
+pydantic==2.6.1
+pydantic[binary]==2.6.1
