@@ -1,17 +1,17 @@
-from fastapi import APIRouter, HTTPException
-from typing import List
+from fastapi import APIRouter, HTTPException, Body
+from typing import List, Dict
 from app.models.animal import Animal
 from app.schemas.animal import AnimalCreate, AnimalResponse
 from tortoise.exceptions import DoesNotExist
 
 router = APIRouter()
 
-@router.get("", response_model=List[AnimalResponse])
+@router.get("", response_model=None)
 async def get_animals():
     """Obtener lista de todos los animales"""
     return await Animal.all()
 
-@router.get("/{animal_id}", response_model=AnimalResponse)
+@router.get("/{animal_id}", response_model=None)
 async def get_animal(animal_id: int):
     """Obtener un animal por su ID"""
     try:
@@ -22,18 +22,17 @@ async def get_animal(animal_id: int):
             detail=f"Animal con ID {animal_id} no encontrado"
         )
 
-@router.post("", response_model=AnimalResponse)
-async def create_animal(animal: AnimalCreate):
+@router.post("", response_model=None)
+async def create_animal(animal: Dict = Body(...)):
     """Crear un nuevo animal"""
-    animal_dict = animal.model_dump()
-    return await Animal.create(**animal_dict)
+    return await Animal.create(**animal)
 
-@router.put("/{animal_id}", response_model=AnimalResponse)
-async def update_animal(animal_id: int, animal: AnimalCreate):
+@router.put("/{animal_id}", response_model=None)
+async def update_animal(animal_id: int, animal: Dict = Body(...)):
     """Actualizar un animal existente"""
     try:
         await Animal.get(id=animal_id)
-        await Animal.filter(id=animal_id).update(**animal.model_dump())
+        await Animal.filter(id=animal_id).update(**animal)
         return await Animal.get(id=animal_id)
     except DoesNotExist:
         raise HTTPException(

@@ -12,5 +12,3 @@ cryptography==41.0.7
 python-multipart==0.0.6
 tomlkit==0.12.3
 tomli-w==1.0.0
-pydantic==2.6.1
-pydantic[binary]==2.6.1

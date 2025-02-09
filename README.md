@@ -60,7 +60,7 @@ Masclet Imperi es una aplicación para la gestión de una granja de ganado bovin
 - PostgreSQL
 - Tortoise ORM
 - Autenticación JWT 
-- Python 3.13
+- Python 3.11 (en entorno conda)
 
 ## 📝 RUTINAS DIARIAS
 
@@ -72,13 +72,16 @@ cd c:\Proyectos\claude\masclet-imperi-web\backend
 # 2. Actualizar código
 git pull origin main
 
-# 3. Activar entorno virtual
-.\venv\Scripts\activate
+# 3. Activar entorno conda
+conda activate masclet-imperi
 
-# 4. Iniciar servidor
+# 4. Actualizar dependencias si hay cambios
+pip install -r requirements.txt
+
+# 5. Iniciar servidor
 uvicorn main:app --reload
 
-# 5. Verificar en navegador
+# 6. Verificar en navegador
 http://localhost:8000/health
 http://localhost:8000/docs
 ```
@@ -93,8 +96,8 @@ git add .
 git commit -m "Descripción de los cambios"
 git push origin main
 
-# 3. Desactivar entorno virtual
-deactivate
+# 3. Desactivar entorno conda
+conda deactivate
 ```
 
 ### ⚠️ SOLUCIÓN DE PROBLEMAS COMUNES
@@ -126,10 +129,10 @@ http://localhost:8000/health
 
 ### Instalación
 
-1. Clonar el repositorio:
-```bash
-git clone https://github.com/pablis77/masclet-imperi-backend.git
-cd masclet-imperi-backend
+1. Crear entorno conda:
+```batch
+conda create -n masclet-imperi python=3.11
+conda activate masclet-imperi
 ```
 
 2. Crear entorno virtual e instalar dependencias:
@@ -235,6 +238,8 @@ aerich upgrade
 
 # Actualizar dependencias
 pip install -r requirements.txt
+# Cambiar la línea de pydantic por:
+pydantic[binary]==2.6.1
 ```
 
 ### Flujo de Operaciones
