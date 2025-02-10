@@ -2,3 +2,12 @@
 tortoise_orm = "app.database.TORTOISE_ORM"
 location = "./migrations"
 src_folder = "./."
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+pythonpath = "."
+testpaths = ["tests"]
+markers = [
+    "db: marca tests que necesitan base de datos"
+]
+asyncio_default_fixture_loop_scope = "session"

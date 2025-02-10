@@ -1,24 +1,33 @@
 from fastapi import FastAPI
-from fastapi.param_functions import Body
-from typing import Optional
+from typing import Optional, List
 from datetime import date
+from pydantic import BaseModel, validator
+from enum import Enum
+
+class Genere(str, Enum):
+    MASCLE = "M"
+    FEMELLA = "F"
+
+class Estado(str, Enum):
+    ACTIVO = "activo"
+    FALLECIDO = "fallecido"
 
 class AnimalBase:
     def __init__(
         self,
         nom: str,
         explotacio: Optional[str] = None,
-        genere: Optional[str] = None,
+        genere: Optional[Genere] = None,
         pare: Optional[str] = None,
         mare: Optional[str] = None,
         quadra: Optional[str] = None,
         cod: Optional[str] = None,
         num_serie: Optional[str] = None,
         dob: Optional[date] = None,
-        estado: Optional[str] = None,
+        estado: Optional[Estado] = None,
         part: Optional[date] = None,
-        genereT: Optional[str] = None,
-        estadoT: Optional[str] = None,
+        genereT: Optional[Genere] = None,
+        estadoT: Optional[Estado] = None,
         alletar: Optional[str] = None
     ):
         self.nom = nom
@@ -36,8 +45,39 @@ class AnimalBase:
         self.estadoT = estadoT
         self.alletar = alletar
 
-class AnimalCreate(AnimalBase):
-    pass
+class PartoCreate(BaseModel):
+    fecha: date
+    genere_cria: Genere
+    estado_cria: Estado = Estado.ACTIVO
 
-class AnimalResponse(AnimalBase):
+class PartoResponse(PartoCreate):
     id: int
+    numero_parto: int
+
+class AnimalCreate(BaseModel):
+    nom: str
+    explotacio: Optional[str] = None
+    genere: Genere
+    pare: Optional[str] = None
+    mare: Optional[str] = None
+    quadra: Optional[str] = None
+    cod: Optional[str] = None
+    num_serie: Optional[str] = None
+    dob: Optional[date] = None
+    estado: Estado = Estado.ACTIVO
+    alletar: Optional[bool] = None
+
+    @validator('alletar')
+    def validate_gender_specific_fields(cls, v, values):
+        if 'genere' in values:
+            if values['genere'] == Genere.MASCLE:
+                if v is not None:
+                    raise ValueError('Los machos no pueden tener valores en alletar')
+            else:
+                if v is None:
+                    return False
+        return v
+
+class AnimalResponse(AnimalCreate):
+    id: int
+    partos: List[PartoResponse] = []

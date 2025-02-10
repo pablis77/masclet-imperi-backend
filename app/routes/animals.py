@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, Body
 from typing import List, Dict
-from app.models.animal import Animal
+from app.models.animal import Animal, Genere
 from app.schemas.animal import AnimalCreate, AnimalResponse
 from tortoise.exceptions import DoesNotExist
 
@@ -25,7 +25,19 @@ async def get_animal(animal_id: int):
 @router.post("", response_model=None)
 async def create_animal(animal: Dict = Body(...)):
     """Crear un nuevo animal"""
-    return await Animal.create(**animal)
+    try:
+        # Si es macho, forzar valores específicos
+        if animal.get('genere') == 'M':
+            animal['alletar'] = False  # Toros nunca amamantan
+            animal['part'] = None      # Toros no tienen partos
+        else:
+            # Si es hembra y no se especifica alletar, default a False
+            if 'alletar' not in animal:
+                animal['alletar'] = False
+
+        return await Animal.create(**animal)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 @router.put("/{animal_id}", response_model=None)
 async def update_animal(animal_id: int, animal: Dict = Body(...)):

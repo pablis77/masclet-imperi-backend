@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.database import init_db
 from app.routes.animals import router as animals_router
+from app.routes import dashboard  # Add dashboard import
 
 app = FastAPI()
 
@@ -16,6 +17,7 @@ app.add_middleware(
 
 # Incluir rutas
 app.include_router(animals_router, prefix="/animals", tags=["animals"])
+app.include_router(dashboard.router, prefix="/dashboard", tags=["dashboard"])
 
 # Eventos de inicio y cierre
 @app.on_event("startup")

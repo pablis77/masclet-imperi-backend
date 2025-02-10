@@ -1,42 +1,49 @@
+import os
 from tortoise import Tortoise
 from fastapi import FastAPI
-import os
 from dotenv import load_dotenv
 
 # Cargar variables de entorno
 load_dotenv()
 
-# Obtener URL de la base de datos desde variables de entorno
-DATABASE_URL = os.getenv("DATABASE_URL")
+# Configuración por defecto
+DB_CONFIG = {
+    'host': 'localhost',
+    'port': '5432',
+    'user': 'postgres',
+    'password': 'admin123',
+    'database': 'masclet_imperi',
+}
+
+DATABASE_URL = f"postgres://{DB_CONFIG['user']}:{DB_CONFIG['password']}@{DB_CONFIG['host']}:{DB_CONFIG['port']}/{DB_CONFIG['database']}"
 
 # Configuración de Tortoise ORM para Aerich
 TORTOISE_ORM = {
-    "connections": {"default": DATABASE_URL},
+    "connections": {
+        "default": DATABASE_URL
+    },
     "apps": {
         "models": {
-            "models": ["app.models.user", "app.models.animal", "aerich.models"],  # Actualizado
+            "models": [
+                "app.models.animal",
+                "app.models.parto",
+                "app.models.user",
+                "aerich.models"
+            ],
             "default_connection": "default",
-        },
-    },
+        }
+    }
 }
 
 async def init_db(app: FastAPI) -> None:
     """Inicializa la conexión a la base de datos."""
-    await Tortoise.init(
-        db_url=DATABASE_URL,
-        modules={
-            'models': [
-                'app.models.user',
-                'app.models.animal',
-                'aerich.models'
-            ]
-        }
-    )
-    # Genera los esquemas si no existen
-    await Tortoise.generate_schemas()
-    
-    # Guarda la instancia de Tortoise en el estado de la app
-    app.state.tortoise = Tortoise
+    try:
+        await Tortoise.init(config=TORTOISE_ORM)
+        await Tortoise.generate_schemas()
+        app.state.tortoise = Tortoise
+    except Exception as e:
+        print(f"Error inicializando la base de datos: {e}")
+        raise
 
 async def close_db() -> None:
     """Cierra la conexión a la base de datos."""
