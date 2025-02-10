@@ -1,52 +1,36 @@
 # backend/app/models/animal.py
-from tortoise import fields, models, validators
 from enum import Enum
-from .icons import get_animal_icon
+from tortoise import fields, models
+from tortoise.models import Model
 
 class Genere(str, Enum):
     MASCLE = "M"
     FEMELLA = "F"
 
-class Estado(str, Enum):
-    ACTIVO = "activo"
-    FALLECIDO = "fallecido"
+class Estat(str, Enum):
+    OK = "OK"
+    FALLECIDO = "DEF"  # Cambiado a DEF para coincidir con el CSV
 
-class Animal(models.Model):
+class Animal(Model):
     id = fields.IntField(pk=True)
+    nom = fields.CharField(max_length=100, unique=True)
+    cod = fields.CharField(max_length=50, unique=True, null=True)
+    num_serie = fields.CharField(max_length=50, unique=True, null=True)
     alletar = fields.BooleanField(default=False)
-    explotacio = fields.CharField(max_length=255, null=True)
-    nom = fields.CharField(max_length=255, unique=True)
-    genere = fields.CharEnumField(Genere, null=True)
-    pare = fields.CharField(max_length=255, null=True)
-    mare = fields.CharField(max_length=255, null=True)
-    quadra = fields.CharField(max_length=50, null=True)
-    cod = fields.CharField(max_length=50, null=True, unique=True)
-    num_serie = fields.CharField(max_length=50, null=True, unique=True)
-    dob = fields.DateField(null=True, description="Date of Birth")
-    estado = fields.CharEnumField(Estado, default=Estado.ACTIVO)
-    part = fields.DateField(null=True)
-    genereT = fields.CharEnumField(Genere, null=True)
-    estadoT = fields.CharEnumField(Estado, null=True)
+    estado = fields.CharEnumField(Estat, default=Estat.OK)
+    genere = fields.CharEnumField(Genere)
+    created_at = fields.DatetimeField(auto_now_add=True)
+    updated_at = fields.DatetimeField(auto_now=True)
     
+    # Campos adicionales según CSV
+    explotacio = fields.CharField(max_length=100, null=True)
+    pare = fields.CharField(max_length=100, null=True)
+    mare = fields.CharField(max_length=100, null=True)
+    quadra = fields.CharField(max_length=100, null=True)
+    dob = fields.DateField(null=True)  # Date of Birth
+
     class Meta:
         table = "animals"
 
     def __str__(self):
-        return f"{self.num_serie} - {self.nom}" if self.num_serie else self.nom
-
-    async def save(self, *args, **kwargs):
-        # Forzar valores para machos
-        if self.genere == "M":
-            self.alletar = False
-            self.part = None
-        return await super().save(*args, **kwargs)
-
-    @property
-    def icon(self) -> str:
-        """Retorna el icono apropiado para el animal"""
-        icon_config = get_animal_icon(
-            self.genere,
-            self.alletar,
-            self.estado
-        )
-        return icon_config.icon
+        return f"{self.nom} ({self.genere})"
