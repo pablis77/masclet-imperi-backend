@@ -464,10 +464,90 @@ Docker uses the following environment variables from `.env`:
 - Access logs with `docker-compose logs -f`
 - Use `docker-compose down -v` to remove volumes when needed
 
-1. Revisar contenido existente
-2. Identificar dónde añadir nuevo contenido
-3. AÑADIR, no reemplazar
-4. Verificar que todo el contenido anterior sigue intacto
-5. Documentar el cambio en git
-````
+### Docker Management Scripts
+```powershell
+# Start containers
+.\scripts\docker-manage.ps1 -Action start
+
+# View status
+.\scripts\docker-manage.ps1 -Action status
+
+# Create backup
+.\scripts\docker-manage.ps1 -Action backup
+```
+
+## 🐳 Docker Configuration
+- **Container**: masclet_imperi_db (PostgreSQL 17)
+- **Port**: 5432
+- **Volume**: masclet_imperi_data
+- **Health Check**: Enabled (10s interval)
+- **Memory**: 512MB-1GB
+
+### PostgreSQL Settings
+```properties
+DATABASE_URL=postgres://postgres:1234@localhost:5432/masclet_imperi
+MAX_CONNECTIONS=100
+SHARED_BUFFERS=256MB
+ENCODING=UTF-8
+```
+
+## 🔄 Database Backup Management
+
+### Commands
+```powershell
+# Create a backup
+.\scripts\docker-manage.ps1 -Action backup
+
+# Verify latest backup
+.\scripts\docker-manage.ps1 -Action verify
+
+# Verify specific backup
+.\scripts\docker-manage.ps1 -Action verify -BackupFile "path/to/backup.sql"
+
+# Restore from backup
+.\scripts\docker-manage.ps1 -Action restore -BackupFile "path/to/backup.sql"
+
+# Initialize test data
+.\scripts\docker-manage.ps1 -Action init-test
+```
+
+### Features
+- Automatic backup rotation (keeps last 4 backups)
+- Integrity verification
+- Pre-restore backup creation
+- Test data initialization
+- Detailed backup analysis and reporting
+
+### Backup Location
+Backups are stored in `./docker/postgres/backups/` with timestamp-based naming:
+```
+backup_YYYYMMDD_HHMMSS.sql
+```
+
+## 🏗️ Arquitectura del Sistema
+
+### Componentes Implementados
+- ✅ **PostgreSQL 17**: Base de datos principal
+  - Contenedorizada con Docker
+  - Configuración optimizada
+  - Sistema de backups
+- ✅ **FastAPI Backend**: 
+  - Endpoints base configurados
+  - Modelos Tortoise ORM
+  - Validaciones básicas
+
+### Próximas Implementaciones
+- 🚧 **Redis**: Caché y sesiones
+- 🚧 **ELK Stack**: Logs y monitorización
+- 🚧 **React Frontend**: UI y gestión de estado
+
+graph TD
+    A[✅ Implementado] --> |PostgreSQL 17| B[Base de Datos]
+    A --> |FastAPI| C[Backend Base]
+    A --> |Docker| D[Contenedorización Base]
+    E[🚧 En Progreso] --> |Scripts| F[Gestión Docker]
+    E --> |Validaciones| G[Sistema Base]
+    H[⏳ Pendiente] --> |Redis| I[Cache]
+    H --> |ELK| J[Monitorización]
+    H --> |React| K[Frontend]
 
