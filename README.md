@@ -79,7 +79,7 @@ conda activate masclet-imperi
 pip install -r requirements.txt
 
 # 5. Iniciar servidor
-uvicorn main:app --reload
+ uvicorn main:app --reload
 
 # 6. Verificar en navegador
 http://localhost:8000/health
@@ -288,48 +288,32 @@ pydantic[binary]==2.6.1
 - Restricciones por rol de usuario
 - Comprobaciones de integridad de datos
 
-## 🚀 SIGUIENTE PASOS
 
-### 1️⃣ CREAR RUTAS PARA ANIMALES
-```batch
-# Crear archivo de rutas
-cd app/routes
-type nul > animals.py
-```
-
-### 2️⃣ IMPLEMENTAR ENDPOINTS BÁSICOS
-Los siguientes endpoints se implementarán en `app/routes/animals.py`:
-- GET /animals - Listar todos los animales
-- GET /animals/{id} - Obtener un animal específico
-- POST /animals - Crear nuevo animal
-- PUT /animals/{id} - Actualizar animal
-- DELETE /animals/{id} - Eliminar animal
-
-### 3️⃣ CONECTAR RUTAS EN MAIN.PY
-```python
-# Añadir en main.py
-from app.routes import animals
-
-# Añadir después de las rutas existentes
-app.include_router(animals.router, prefix="/animals", tags=["animals"])
-```
-
-### 4️⃣ PROBAR LOS ENDPOINTS
-1. Asegúrate que el servidor está corriendo:
-```batch
-uvicorn main:app --reload
-```
-
-2. Visita la documentación Swagger:
+Visita la documentación Swagger:
    - http://localhost:8000/docs
    - Prueba los nuevos endpoints de animales
 
-### 5️⃣ IMPLEMENTAR AUTENTICACIÓN
-- Proteger rutas con JWT
-- Implementar roles de usuario
-- Configurar permisos por endpoint
+
 
 > **Nota**: Para detener el servidor en cualquier momento, presiona `Ctrl+C` en la terminal
+
+## 🔐 Usuarios y Accesos
+
+### Base de Datos
+- **Usuario**: `postgres`
+- **Contraseña**: `1234`
+- **Propósito**: Conexión backend y gestión BD
+- **Uso**: Configuración en `.env` y `config.py`
+
+### Usuarios Aplicación (planificado)
+- 👑 **Administrador**: Acceso total
+- 👨‍💼 **Coordinador**: Gestión de explotaciones
+- ✏️ **Editor**: Actualización limitada
+- 👤 **Usuario**: Solo consulta
+
+> ⚠️ **Nota**: El usuario `postgres` es solo para la conexión backend-database. 
+> Los usuarios de la aplicación se gestionarán a través del frontend cuando 
+> se implemente el sistema de autenticación.
 
 ### Estructura del Proyecto
 
@@ -485,4 +469,5 @@ Docker uses the following environment variables from `.env`:
 3. AÑADIR, no reemplazar
 4. Verificar que todo el contenido anterior sigue intacto
 5. Documentar el cambio en git
+````
 
