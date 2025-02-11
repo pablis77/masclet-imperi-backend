@@ -1,9 +1,13 @@
 param(
     [Parameter(Mandatory=$true)]
-    [ValidateSet('start','stop','restart','status','backup','clean','restore','verify','init-test')]
+    [ValidateSet('start','stop','restart','status','backup','clean','restore','verify','init-test','tag')]
     [string]$Action,
     [Parameter(Mandatory=$false)]
-    [string]$BackupFile
+    [string]$BackupFile,
+    [Parameter(Mandatory=$false)]
+    [string]$ImageName,
+    [Parameter(Mandatory=$false)]
+    [string]$NewTag
 )
 
 $ErrorActionPreference = 'Stop'
@@ -33,6 +37,32 @@ try {
 function Test-DockerHealth {
     & $DockerPath inspect -f '{{.State.Health.Status}}' masclet_imperi_db
     return $LASTEXITCODE -eq 0
+}
+
+function Test-DockerConfig {
+    Write-Host "Validating Docker configuration..."
+    
+    # Check .env file
+    if (-not (Test-Path "../.env")) {
+        Write-Error "Missing .env file"
+        return $false
+    }
+
+    # Check required directories
+    $dirs = @(
+        "../docker/postgres/init",
+        "../docker/postgres/logs",
+        "../docker/postgres/backups"
+    )
+    
+    foreach ($dir in $dirs) {
+        if (-not (Test-Path $dir)) {
+            New-Item -ItemType Directory -Path $dir -Force
+            Write-Host "Created directory: $dir"
+        }
+    }
+
+    return $true
 }
 
 function New-Backup {
@@ -192,8 +222,12 @@ function Initialize-TestData {
 
 switch ($Action) {
     'start' {
+        if (-not (Test-DockerConfig)) {
+            Write-Error "Configuration validation failed"
+            exit 1
+        }
         Write-Host "Starting containers..."
-        docker compose -f $DockerComposePath up -d
+        & $DockerPath compose -f $DockerComposePath up -d
         $retries = 0
         while (-not (Test-DockerHealth) -and $retries -lt 5) {
             Write-Host "Waiting for database to be healthy..."
@@ -203,15 +237,44 @@ switch ($Action) {
     }
     'stop' {
         Write-Host "Stopping containers..."
-        docker compose -f $DockerComposePath down
+        & $DockerPath compose -f $DockerComposePath down
     }
     'restart' {
         Write-Host "Restarting containers..."
-        docker compose -f $DockerComposePath restart
+        & $DockerPath compose -f $DockerComposePath restart
+        
+        $retries = 0
+        while (-not (Test-DockerHealth) -and $retries -lt 5) {
+            Write-Host "Waiting for database to be healthy..."
+            Start-Sleep -Seconds 5
+            $retries++
+        }
+        
+        if (Test-DockerHealth) {
+            Write-Host "Restart completed successfully" -ForegroundColor Green
+        } else {
+            Write-Host "Warning: Database might not be fully healthy" -ForegroundColor Yellow
+        }
     }
     'status' {
         Write-Host "Container status:"
-        docker ps --filter "name=masclet_imperi*"
+        Write-Host "----------------"
+        
+        # Show all related containers
+        Write-Host "`nAll project containers:"
+        & $DockerPath ps -a --format "table {{.Names}}\t{{.Image}}\t{{.Status}}\t{{.Ports}}" | 
+            Select-String -Pattern "masclet|postgres"
+        
+        Write-Host "`nNetwork status:"
+        & $DockerPath network inspect masclet_network --format "{{range .Containers}}{{.Name}} ({{.IPv4Address}}){{println}}{{end}}"
+        
+        Write-Host "`nHealth status:"
+        Write-Host "--------------"
+        if (Test-DockerHealth) {
+            Write-Host "Database is healthy [OK]" -ForegroundColor Green
+        } else {
+            Write-Host "Database is not healthy [ERROR]" -ForegroundColor Red
+        }
     }
     'backup' {
         Write-Host "Creating backup..."
@@ -240,5 +303,22 @@ switch ($Action) {
     }
     'init-test' {
         Initialize-TestData
+    }
+    'tag' {
+        if (-not $ImageName -or -not $NewTag) {
+            Write-Error "Both ImageName and NewTag parameters are required for tag action"
+            return
+        }
+        Write-Host "Tagging image $ImageName as $NewTag..."
+        & $DockerPath tag $ImageName $NewTag
+        if ($LASTEXITCODE -eq 0) {
+            Write-Host "Image tagged successfully" -ForegroundColor Green
+            # Show updated image list
+            Write-Host "`nUpdated images:"
+            & $DockerPath images --format "table {{.Repository}}:{{.Tag}}\t{{.Size}}" | 
+                Select-String -Pattern ($ImageName -split ':')[0]
+        } else {
+            Write-Error "Failed to tag image"
+        }
     }
 }
