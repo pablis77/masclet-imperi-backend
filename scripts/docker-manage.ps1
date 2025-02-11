@@ -35,17 +35,51 @@ try {
 }
 
 function Test-DockerHealth {
-    & $DockerPath inspect -f '{{.State.Health.Status}}' masclet_imperi_db
-    return $LASTEXITCODE -eq 0
+    try {
+        $dbHealth = & $DockerPath inspect masclet_imperi_db --format "{{.State.Health.Status}}" 2>$null
+        if ($LASTEXITCODE -ne 0) {
+            Write-Host "Database container not found" -ForegroundColor Yellow
+            return $false
+        }
+        return ($dbHealth -eq "healthy")
+    }
+    catch {
+        Write-Host "Error checking container health: $_" -ForegroundColor Red
+        return $false
+    }
 }
 
 function Test-DockerConfig {
     Write-Host "Validating Docker configuration..."
     
+    # Check Docker service
+    $dockerService = Get-Service 'com.docker.service'
+    if ($dockerService.Status -ne 'Running') {
+        Write-Host "Docker service is not running. Starting service..."
+        Start-Service 'com.docker.service'
+        Start-Sleep -Seconds 10
+    }
+
     # Check .env file
-    if (-not (Test-Path "../.env")) {
-        Write-Error "Missing .env file"
-        return $false
+    $envPath = Join-Path $PSScriptRoot "../.env"
+    if (-not (Test-Path $envPath)) {
+        Write-Host "Creating default .env file..."
+        @"
+# PostgreSQL Settings
+POSTGRES_DB=masclet_imperi
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=1234
+POSTGRES_PORT=5432
+
+# Resource Limits
+POSTGRES_CPU_LIMIT=1
+POSTGRES_MEM_LIMIT=1G
+POSTGRES_MEM_RESERVATION=512M
+
+# Logging
+LOG_MAX_SIZE=10m
+LOG_MAX_FILE=3
+"@ | Out-File $envPath -Encoding UTF8
     }
 
     # Check required directories
@@ -56,9 +90,10 @@ function Test-DockerConfig {
     )
     
     foreach ($dir in $dirs) {
-        if (-not (Test-Path $dir)) {
-            New-Item -ItemType Directory -Path $dir -Force
-            Write-Host "Created directory: $dir"
+        $fullPath = Join-Path $PSScriptRoot $dir
+        if (-not (Test-Path $fullPath)) {
+            New-Item -ItemType Directory -Path $fullPath -Force
+            Write-Host "Created directory: $fullPath"
         }
     }
 
@@ -226,8 +261,12 @@ switch ($Action) {
             Write-Error "Configuration validation failed"
             exit 1
         }
-        Write-Host "Starting containers..."
+        Write-Host "Pulling required images..."
+        & $DockerPath pull postgres:17
+        
+        Write-Host "`nStarting containers..."
         & $DockerPath compose -f $DockerComposePath up -d
+        
         $retries = 0
         while (-not (Test-DockerHealth) -and $retries -lt 5) {
             Write-Host "Waiting for database to be healthy..."
@@ -263,18 +302,18 @@ switch ($Action) {
         # Show all related containers
         Write-Host "`nAll project containers:"
         & $DockerPath ps -a --format "table {{.Names}}\t{{.Image}}\t{{.Status}}\t{{.Ports}}" | 
-            Select-String -Pattern "masclet|postgres"
+            Select-String -Pattern "masclet|postgres|redis"
         
         Write-Host "`nNetwork status:"
         & $DockerPath network inspect masclet_network --format "{{range .Containers}}{{.Name}} ({{.IPv4Address}}){{println}}{{end}}"
         
         Write-Host "`nHealth status:"
         Write-Host "--------------"
-        if (Test-DockerHealth) {
-            Write-Host "Database is healthy [OK]" -ForegroundColor Green
-        } else {
-            Write-Host "Database is not healthy [ERROR]" -ForegroundColor Red
-        }
+        $dbHealth = & $DockerPath inspect masclet_imperi_db --format "{{.State.Health.Status}}"
+        $redisHealth = & $DockerPath inspect masclet_imperi_cache --format "{{.State.Health.Status}}"
+        
+        Write-Host "Database: $dbHealth" -ForegroundColor $(if($dbHealth -eq "healthy"){"Green"}else{"Red"})
+        Write-Host "Cache: $redisHealth" -ForegroundColor $(if($redisHealth -eq "healthy"){"Green"}else{"Red"})
     }
     'backup' {
         Write-Host "Creating backup..."
@@ -282,7 +321,7 @@ switch ($Action) {
     }
     'clean' {
         Write-Host "Cleaning unused resources..."
-        docker system prune -f
+        & "C:\Program Files\Docker\Docker\resources\bin\docker.exe" system prune -af --volumes
     }
     'verify' {
         Write-Host "Verifying backup..."
