@@ -43,30 +43,36 @@ class PartoResponse(PartoBase):
     numero_parto: int
 
 class AnimalBase(BaseModel):
-    nom: str = Field(..., min_length=1, max_length=100, description="Nom de l'animal")
-    cod: Optional[str] = Field(None, max_length=50, description="Codi identificatiu")
-    num_serie: Optional[str] = Field(None, max_length=50, description="Número de serie")
-    alletar: bool = Field(default=False, description="Indica si està alletant")
-    estat: Estat = Field(default=Estat.ACTIU, description="Estat actual")
-    genere: Genere = Field(..., description="Gènere de l'animal")
-    explotacio: str = Field(..., description="Codi de l'explotació")
-    
-    model_config = ConfigDict(
-        from_attributes=True,
-        arbitrary_types_allowed=True
-    )
+    alletar: bool = False
+    explotacio: str
+    nom: str
+    genere: str
+    pare: Optional[str] = None
+    mare: Optional[str] = None
+    quadra: str
+    cod: str
+    num_serie: str
+    dob: Optional[date] = None
+    estado: str
+    part: int = 0
+    genere_t: Optional[str] = None
+    estado_t: Optional[str] = None
 
-    @field_validator('alletar')
-    def validate_alletar(cls, v: bool, values: Dict[str, Any]) -> bool:
-        if 'genere' in values.data and values.data['genere'] == Genere.MASCLE and v:
-            raise ValueError('Un mascle no pot estar alletant')
-        return v
+    model_config = ConfigDict(from_attributes=True)
 
 class AnimalCreate(AnimalBase):
     pass
 
 class AnimalUpdate(AnimalBase):
-    pass
+    alletar: Optional[bool] = None
+    explotacio: Optional[str] = None
+    nom: Optional[str] = None
+    genere: Optional[str] = None
+    quadra: Optional[str] = None
+    cod: Optional[str] = None
+    num_serie: Optional[str] = None
+    estado: Optional[str] = None
+    part: Optional[int] = None
 
 class AnimalListItem(BaseModel):
     """Modelo para listado de animales"""
@@ -94,9 +100,11 @@ class AnimalListItem(BaseModel):
 
 class AnimalResponse(AnimalBase):
     id: int
-    partos: List[PartoResponse] = []
-    created_at: datetime
-    updated_at: datetime
+    created_at: date
+    updated_at: date
+
+class AnimalDetail(AnimalResponse):
+    pass
 
 class AnimalDetail(BaseModel):
     general: Dict[str, Any] = Field(..., description="Dades generals")
@@ -116,18 +124,7 @@ class ExplotacioStats(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 class ExplotacioResponse(BaseModel):
-    """Modelo de respuesta para explotaciones"""
-    stats: ExplotacioStats
-    animales: List[AnimalListItem]
-    
-    model_config = ConfigDict(
-        from_attributes=True,
-        validate_assignment=True,
-        arbitrary_types_allowed=True
-    )
+    explotacio: str
+    total: int
 
-    class Config:
-        json_encoders = {
-            datetime: lambda v: v.strftime("%Y-%m-%d %H:%M:%S"),
-            date: lambda v: v.strftime("%Y-%m-%d")
-        }
+    model_config = ConfigDict(from_attributes=True)

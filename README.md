@@ -86,6 +86,15 @@ http://localhost:8000/health
 http://localhost:8000/docs
 ```
 
+
+# Antes de cualquier cambio significativo
+git checkout -b feature/nueva-funcionalidad
+
+# Después de los cambios
+git add .
+git commit -m "ADD: Nueva funcionalidad (mantiene funcionalidad anterior)"
+
+
 ### 🌙 FIN DEL DÍA
 ```batch
 # 1. Detener servidor
@@ -324,24 +333,156 @@ uvicorn main:app --reload
 
 ### Estructura del Proyecto
 
+
+# Masclet Imperi Backend
+
 ```
 backend/
 ├── app/
-│   ├── auth/
-│   │   └── auth_utils.py
+│   ├── __init__.py
+│   ├── main.py
+│   ├── api/
+│   │   ├── __init__.py
+│   │   ├── deps.py
+│   │   └── endpoints/
+│   │       ├── __init__.py
+│   │       ├── animals.py
+│   │       ├── auth.py
+│   │       └── dashboard.py
+│   ├── core/
+│   │   ├── __init__.py
+│   │   ├── config.py
+│   │   ├── error_handlers.py
+│   │   └── security.py
+│   ├── db/
+│   │   ├── __init__.py
+│   │   └── session.py
 │   ├── models/
+│   │   ├── __init__.py
 │   │   ├── animal.py
-│   │   ├── user.py
-│   │   └── __init__.py
-│   ├── routes/
-│   │   ├── auth.py
-│   │   └── __init__.py
-│   ├── database.py
-│   └── models.py
-├── database/
+│   │   ├── base.py
+│   │   └── user.py
+│   ├── schemas/
+│   │   ├── __init__.py
+│   │   ├── animal.py
+│   │   ├── base.py
+│   │   └── user.py
+│   └── services/
+│       ├── __init__.py
+│       └── auth.py
+├── migrations/
+│   └── versions/
+├── tests/
+│   ├── __init__.py
+│   ├── conftest.py
+│   ├── test_api/
+│   │   ├── __init__.py
+│   │   ├── test_animals.py
+│   │   └── test_auth.py
+│   └── test_services/
+│       ├── __init__.py
+│       └── test_auth.py
+├── scripts/
+│   ├── backup_config.py
+│   └── check_setup.py
 ├── .env
 ├── .gitignore
-├── main.py
+├── aerich.ini
+├── Dockerfile
+├── pyproject.toml
 ├── README.md
 └── requirements.txt
+```
+
+## Directory Description
+
+- `app/`: Main application package
+  - `api/`: API routes and dependencies
+  - `core/`: Core functionality and configuration
+  - `db/`: Database configuration
+  - `models/`: SQLAlchemy/Tortoise ORM models
+  - `schemas/`: Pydantic models for request/response
+  - `services/`: Business logic
+
+- `migrations/`: Database migrations
+- `tests/`: Test files
+- `scripts/`: Utility scripts
+
+## Development Setup
+
+1. Crear entorno conda:
+```powershell
+conda create -n masclet-imperi python=3.11
+conda activate masclet-imperi
+```
+
+2. Instalar dependencias:
+```powershell
+pip install -r requirements.txt
+```
+
+3. Ejecutar la aplicación:
+```powershell
+uvicorn app.main:app --reload
+```
+
+## API Documentation
+
+- Swagger UI: http://localhost:8000/docs
+- ReDoc: http://localhost:8000/redoc
+
+## 🐳 Docker Setup
+
+### Prerequisites
+- Docker Desktop
+- Docker Compose
+
+### Build and Run with Docker
+```bash
+# Build the images
+docker-compose build
+
+# Start the services
+docker-compose up -d
+
+# Check logs
+docker-compose logs -f
+
+# Stop services
+docker-compose down
+```
+
+### Docker Commands
+```bash
+# Rebuild a specific service
+docker-compose build api
+
+# Restart a service
+docker-compose restart api
+
+# View running containers
+docker-compose ps
+
+# Execute commands in container
+docker-compose exec api bash
+```
+
+### Environment Variables
+Docker uses the following environment variables from `.env`:
+- `DATABASE_URL`: PostgreSQL connection string
+- `POSTGRES_USER`: Database user
+- `POSTGRES_PASSWORD`: Database password
+- `POSTGRES_DB`: Database name
+
+### Docker Development Tips
+- Use `volumes` to mount local code into container
+- Hot reload is enabled by default
+- Access logs with `docker-compose logs -f`
+- Use `docker-compose down -v` to remove volumes when needed
+
+1. Revisar contenido existente
+2. Identificar dónde añadir nuevo contenido
+3. AÑADIR, no reemplazar
+4. Verificar que todo el contenido anterior sigue intacto
+5. Documentar el cambio en git
 

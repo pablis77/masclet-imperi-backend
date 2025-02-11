@@ -4,7 +4,7 @@ from datetime import datetime
 from tortoise.contrib.fastapi import HTTPNotFoundError
 from app.models.animal import Animal, Estat, Genere
 from app.models.animal_history import AnimalHistory
-from app.schemas.animal import AnimalCreate, AnimalUpdate, AnimalResponse, AnimalDetail, ExplotacioResponse
+from app.schemas.animal import AnimalCreate, AnimalUpdate, AnimalResponse, AnimalDetail, ExplotacioResponse, AnimalListItem
 from app.core.messages import APIMessage, MessageType, MessageResponse
 
 router = APIRouter()
@@ -222,3 +222,11 @@ async def get_explotacion_details(explotacio: str):
             "num_partos": len(await animal.partos)
         } for animal in animales]
     )
+
+@router.get("/", response_model=List[AnimalListItem])
+async def get_animals():
+    return await Animal.all()
+
+@router.post("/", response_model=AnimalResponse)
+async def create_animal(animal: AnimalCreate):
+    return await Animal.create(**animal.model_dump())

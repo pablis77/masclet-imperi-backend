@@ -1,7 +1,8 @@
 # backend/app/models/animal.py
 from enum import Enum
 from tortoise import fields, models
-from tortoise.models import Model
+from datetime import date
+from typing import Optional
 
 class Genere(str, Enum):
     MASCLE = "M"
@@ -11,7 +12,7 @@ class Estat(str, Enum):
     OK = "OK"
     FALLECIDO = "DEF"  # Cambiado a DEF para coincidir con el CSV
 
-class Animal(Model):
+class Animal(models.Model):
     id = fields.IntField(pk=True)
     nom = fields.CharField(max_length=100, unique=True)
     cod = fields.CharField(max_length=50, unique=True, null=True)
@@ -28,6 +29,9 @@ class Animal(Model):
     mare = fields.CharField(max_length=100, null=True)
     quadra = fields.CharField(max_length=100, null=True)
     dob = fields.DateField(null=True)  # Date of Birth
+    part = fields.IntField(default=0)
+    genere_t = fields.CharField(max_length=50, null=True)
+    estado_t = fields.CharField(max_length=50, null=True)
 
     class Meta:
         table = "animals"

@@ -1,12 +1,18 @@
 from fastapi import Request
 from fastapi.responses import JSONResponse
-from app.core.messages import APIMessage, MessageType
+from typing import Union
+from fastapi.exceptions import RequestValidationError
 
-async def http_error_handler(request: Request, exc: Exception) -> JSONResponse:
+async def http_error_handler(
+    request: Request, 
+    exc: Union[Exception, RequestValidationError]
+) -> JSONResponse:
+    if isinstance(exc, RequestValidationError):
+        return JSONResponse(
+            status_code=422,
+            content={"detail": exc.errors()}
+        )
     return JSONResponse(
-        status_code=getattr(exc, "status_code", 500),
-        content=APIMessage(
-            message=str(exc),
-            type=MessageType.ERROR
-        ).dict()
+        status_code=500,
+        content={"detail": str(exc)}
     )

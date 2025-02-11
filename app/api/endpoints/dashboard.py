@@ -1,10 +1,15 @@
 from fastapi import APIRouter, HTTPException
 from app.models.animal import Animal, Estat, Genere
+from app.schemas.animal import ExplotacioStats
 from typing import Dict
 from datetime import datetime, timedelta
 import logging
 
 router = APIRouter()
+
+@router.get("/")
+async def read_dashboard():
+    return {"status": "dashboard operational"}
 
 @router.get("/dashboard/resumen")
 async def obtener_resumen():
@@ -82,4 +87,14 @@ async def get_recent_activity():
         ).order_by("-created_at").limit(5).values(
             "id", "nom", "genere", "created_at"
         )
+    }
+
+@router.get("/stats", response_model=ExplotacioStats)
+async def get_dashboard_stats():
+    return {
+        "total": 0,
+        "machos": 0,
+        "hembras": 0,
+        "terneros": 0,
+        "fecha": "2024-02-11T00:00:00"
     }

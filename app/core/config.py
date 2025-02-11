@@ -3,6 +3,7 @@ from typing import Dict, List, ClassVar, Any
 from typing_extensions import TypedDict
 from enum import Enum
 from pathlib import Path
+from functools import lru_cache
 
 class UserRole(str, Enum):
     ADMIN = "administrador"
@@ -30,37 +31,43 @@ class UIStyles(TypedDict):
     info: UIStyle
 
 class Settings(BaseSettings):
-    # API Information
-    API_NAME: str = "MASCLET IMPERI API"
-    API_VERSION: str = "1.0.0"
-    
-    # Database Configuration
-    DB_URL: str = "postgres://postgres:1234@localhost:5432/masclet_imperi"
-    
-    # Roles y Permisos
-    ROLES: Dict[str, List[str]] = {}
-    
-    # Directories
-    BASE_DIR: str = str(Path(__file__).resolve().parent.parent)
-    DATA_DIR: str = str(Path(BASE_DIR) / "data")
-    BACKUP_DIR: str = str(Path(BASE_DIR) / "backups")
+    DATABASE_URL: str
+    API_V1_STR: str = "/api/v1"
+    PROJECT_NAME: str = "Masclet Imperi"
+    SECRET_KEY: str = "your-secret-key"
 
-    @property
-    def TORTOISE_ORM(self) -> Dict[str, Any]:
-        return {
-            "connections": {"default": self.DB_URL},
-            "apps": {
-                "models": {
-                    "models": ["app.models.animal", "app.models.animal_history", "aerich.models"],
-                    "default_connection": "default",
-                }
-            },
-        }
-    
     model_config = SettingsConfigDict(
         env_file=".env",
-        case_sensitive=True
+        env_file_encoding="utf-8",
+        case_sensitive=False
     )
+
+settings = Settings()
+
+# Tortoise ORM Configuration
+TORTOISE_ORM: Dict[str, Any] = {
+    "connections": {
+        "default": {
+            "engine": "tortoise.backends.asyncpg",
+            "credentials": {
+                "database": "masclet_imperi",
+                "host": "localhost",
+                "password": "1234",
+                "port": 5432,
+                "user": "postgres",
+                "min_size": 1,
+                "max_size": 5
+            }
+        }
+    },
+    "apps": {
+        "models": {
+            "models": ["app.models.animal", "aerich.models"],
+            "default_connection": "default",
+        }
+    },
+    "use_tz": False,
+}
 
 # UI Styles como constante global
 UI_STYLES = {
@@ -99,5 +106,9 @@ ROLES = {
     ]
 }
 
+@lru_cache()
+def get_settings() -> Settings:
+    return Settings()
+
 # Create settings instance
-settings = Settings()
+settings = get_settings()
